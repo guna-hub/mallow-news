@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 import 'package:mallow_news/core/constants/api_constants.dart';
 import 'package:mallow_news/core/errors/api_exception.dart';
 import 'package:mallow_news/data/models/article_model.dart';
@@ -6,6 +7,7 @@ import 'package:mallow_news/domain/repositories/news_repository.dart';
 import 'package:mallow_news/presentation/bloc/news_event.dart';
 import 'package:mallow_news/presentation/bloc/news_state.dart';
 
+@injectable
 class NewsBloc extends Bloc<NewsEvent, NewsState> {
   final NewsRepository _newsRepository;
 

@@ -45,6 +45,7 @@ The app follows **MVVM (Model - View - ViewModel / BLoC)** with clear separation
 lib/
 ├── core/
 │   ├── constants/       # API endpoints, timeouts, and categories
+│   ├── di/              # GetIt + Injectable dependency injection
 │   ├── errors/          # Typed ApiException & error categorization
 │   ├── network/         # DioFactory, Retrofit ApiClient & generated client
 │   ├── theme/           # Light & Dark ThemeData configurations
@@ -77,6 +78,7 @@ lib/
 | Package | Purpose |
 |---|---|
 | `flutter_bloc` | MVVM BLoC state management |
+| `get_it` & `injectable` | Dependency Injection (DI) service locator and auto-generation |
 | `dio` & `retrofit` | HTTP client with typed REST client generation |
 | `json_annotation` & `json_serializable` | Compile-time JSON parsing and model generation |
 | `cached_network_image` | Image caching with placeholder and error handling |

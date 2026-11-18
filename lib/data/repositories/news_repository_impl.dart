@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:injectable/injectable.dart';
 import 'package:mallow_news/core/errors/api_exception.dart';
 import 'package:mallow_news/core/network/api_client.dart';
 import 'package:mallow_news/data/models/article_model.dart';
 import 'package:mallow_news/domain/repositories/news_repository.dart';
 
+@LazySingleton(as: NewsRepository)
 class NewsRepositoryImpl implements NewsRepository {
   final ApiClient _apiClient;
 
