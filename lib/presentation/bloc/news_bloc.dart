@@ -1,17 +1,21 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:injectable/injectable.dart';
 import 'package:mallow_news/core/constants/api_constants.dart';
+import 'package:mallow_news/core/di/injection_container.dart';
 import 'package:mallow_news/core/errors/api_exception.dart';
 import 'package:mallow_news/data/models/article_model.dart';
-import 'package:mallow_news/domain/repositories/news_repository.dart';
-import 'package:mallow_news/presentation/bloc/news_event.dart';
-import 'package:mallow_news/presentation/bloc/news_state.dart';
+import 'package:mallow_news/domain/usecases/get_articles_usecase.dart';
 
-@injectable
+part 'news_event.dart';
+part 'news_state.dart';
+
+
 class NewsBloc extends Bloc<NewsEvent, NewsState> {
-  final NewsRepository _newsRepository;
+  final GetArticlesUseCase _getArticlesUseCase;
 
-  NewsBloc(this._newsRepository) : super(const NewsState()) {
+  NewsBloc({GetArticlesUseCase? getArticlesUseCase})
+      : _getArticlesUseCase = getArticlesUseCase ?? getIt<GetArticlesUseCase>(),
+        super(const NewsState()) {
     on<FetchInitialNews>(_onFetchInitialNews);
     on<RefreshNews>(_onRefreshNews);
     on<LoadMoreNews>(_onLoadMoreNews);
@@ -19,23 +23,16 @@ class NewsBloc extends Bloc<NewsEvent, NewsState> {
     on<CategorySelected>(_onCategorySelected);
   }
 
-  Future<void> _onFetchInitialNews(
-    FetchInitialNews event,
-    Emitter<NewsState> emit,
-  ) async {
-    emit(state.copyWith(
-      status: NewsStatus.loading,
-      errorMessage: null,
-      offset: 0,
-      hasReachedMax: false,
-    ));
-
+  Future<void> _onFetchInitialNews(FetchInitialNews event, Emitter<NewsState> emit) async {
+    emit(state.copyWith(status: NewsStatus.loading));
     try {
-      final response = await _newsRepository.getArticles(
-        limit: ApiConstants.defaultPageSize,
-        offset: 0,
-        search: state.searchQuery,
-        newsSite: state.selectedCategory,
+      final response = await _getArticlesUseCase(
+        GetArticlesParams(
+          limit: ApiConstants.defaultPageSize,
+          offset: 0,
+          search: state.searchQuery,
+          newsSite: state.selectedCategory,
+        ),
       );
 
       final validResults = _filterValidArticles(response.results);
@@ -65,11 +62,13 @@ class NewsBloc extends Bloc<NewsEvent, NewsState> {
     Emitter<NewsState> emit,
   ) async {
     try {
-      final response = await _newsRepository.getArticles(
-        limit: ApiConstants.defaultPageSize,
-        offset: 0,
-        search: state.searchQuery,
-        newsSite: state.selectedCategory,
+      final response = await _getArticlesUseCase(
+        GetArticlesParams(
+          limit: ApiConstants.defaultPageSize,
+          offset: 0,
+          search: state.searchQuery,
+          newsSite: state.selectedCategory,
+        ),
       );
 
       final validResults = _filterValidArticles(response.results);
@@ -111,18 +110,17 @@ class NewsBloc extends Bloc<NewsEvent, NewsState> {
     emit(state.copyWith(isLoadingMore: true, clearLoadMoreError: true));
 
     try {
-      final response = await _newsRepository.getArticles(
-        limit: ApiConstants.defaultPageSize,
-        offset: state.offset,
-        search: state.searchQuery,
-        newsSite: state.selectedCategory,
+      final response = await _getArticlesUseCase(
+        GetArticlesParams(
+          limit: ApiConstants.defaultPageSize,
+          offset: state.offset,
+          search: state.searchQuery,
+          newsSite: state.selectedCategory,
+        ),
       );
-
       final newArticles = _filterValidArticles(response.results);
       final hasReachedMax = response.next == null || newArticles.isEmpty;
-
       final updatedArticles = List<ResultsResponse>.from(state.articles)..addAll(newArticles);
-
       emit(state.copyWith(
         articles: updatedArticles,
         isLoadingMore: false,
@@ -130,47 +128,31 @@ class NewsBloc extends Bloc<NewsEvent, NewsState> {
         offset: state.offset + newArticles.length,
       ));
     } on ApiException catch (e) {
-      emit(state.copyWith(
-        isLoadingMore: false,
-        loadMoreError: e.message,
-      ));
+      emit(state.copyWith(isLoadingMore: false, loadMoreError: e.message));
     } catch (e) {
-      emit(state.copyWith(
-        isLoadingMore: false,
-        loadMoreError: 'Failed to load more news.',
-      ));
+      emit(state.copyWith(isLoadingMore: false, loadMoreError: 'Failed to load more news.'));
     }
   }
 
-  Future<void> _onSearchQueryChanged(
-    SearchQueryChanged event,
-    Emitter<NewsState> emit,
-  ) async {
+  Future<void> _onSearchQueryChanged(SearchQueryChanged event, Emitter<NewsState> emit) async {
     if (event.query == state.searchQuery) return;
-
     emit(state.copyWith(
       searchQuery: event.query,
       offset: 0,
       hasReachedMax: false,
       clearLoadMoreError: true,
     ));
-
     add(const FetchInitialNews());
   }
 
-  Future<void> _onCategorySelected(
-    CategorySelected event,
-    Emitter<NewsState> emit,
-  ) async {
+  Future<void> _onCategorySelected(CategorySelected event, Emitter<NewsState> emit) async {
     if (event.category == state.selectedCategory) return;
-
     emit(state.copyWith(
       selectedCategory: event.category,
       offset: 0,
       hasReachedMax: false,
       clearLoadMoreError: true,
     ));
-
     add(const FetchInitialNews());
   }
 

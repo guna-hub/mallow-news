@@ -1,5 +1,4 @@
-import 'package:equatable/equatable.dart';
-import 'package:mallow_news/data/models/article_model.dart';
+part of 'news_bloc.dart';
 
 enum NewsStatus { initial, loading, success, failure }
 

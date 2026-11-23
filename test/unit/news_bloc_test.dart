@@ -1,17 +1,20 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mallow_news/core/di/injection_container.dart';
 import 'package:mallow_news/core/errors/api_exception.dart';
 import 'package:mallow_news/data/models/article_model.dart';
-import 'package:mallow_news/domain/repositories/news_repository.dart';
+import 'package:mallow_news/domain/usecases/get_articles_usecase.dart';
 import 'package:mallow_news/presentation/bloc/news_bloc.dart';
-import 'package:mallow_news/presentation/bloc/news_event.dart';
-import 'package:mallow_news/presentation/bloc/news_state.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockNewsRepository extends Mock implements NewsRepository {}
+class MockGetArticlesUseCase extends Mock implements GetArticlesUseCase {}
 
 void main() {
-  late MockNewsRepository mockRepository;
+  late MockGetArticlesUseCase mockGetArticlesUseCase;
+
+  setUpAll(() {
+    registerFallbackValue(const GetArticlesParams());
+  });
 
   final sampleArticle = ResultsResponse(
     1,
@@ -35,13 +38,19 @@ void main() {
     [sampleArticle],
   );
 
-  setUp(() {
-    mockRepository = MockNewsRepository();
+  setUp(() async {
+    await getIt.reset();
+    mockGetArticlesUseCase = MockGetArticlesUseCase();
+    getIt.registerSingleton<GetArticlesUseCase>(mockGetArticlesUseCase);
+  });
+
+  tearDown(() async {
+    await getIt.reset();
   });
 
   group('NewsBloc Tests', () {
     test('initial state has NewsStatus.initial', () {
-      final bloc = NewsBloc(mockRepository);
+      final bloc = NewsBloc(getArticlesUseCase: mockGetArticlesUseCase);
       expect(bloc.state.status, NewsStatus.initial);
       expect(bloc.state.articles, isEmpty);
     });
@@ -49,13 +58,8 @@ void main() {
     blocTest<NewsBloc, NewsState>(
       'emits [loading, success] when FetchInitialNews is added and succeeds',
       build: () {
-        when(() => mockRepository.getArticles(
-              limit: any(named: 'limit'),
-              offset: any(named: 'offset'),
-              search: any(named: 'search'),
-              newsSite: any(named: 'newsSite'),
-            )).thenAnswer((_) async => sampleResponse);
-        return NewsBloc(mockRepository);
+        when(() => mockGetArticlesUseCase(any())).thenAnswer((_) async => sampleResponse);
+        return NewsBloc(getArticlesUseCase: mockGetArticlesUseCase);
       },
       act: (bloc) => bloc.add(const FetchInitialNews()),
       expect: () => [
@@ -72,16 +76,11 @@ void main() {
     blocTest<NewsBloc, NewsState>(
       'emits [loading, failure] when FetchInitialNews fails with ApiException',
       build: () {
-        when(() => mockRepository.getArticles(
-              limit: any(named: 'limit'),
-              offset: any(named: 'offset'),
-              search: any(named: 'search'),
-              newsSite: any(named: 'newsSite'),
-            )).thenThrow(const ApiException(
+        when(() => mockGetArticlesUseCase(any())).thenThrow(const ApiException(
           message: 'No internet connection',
           type: ApiErrorType.noInternet,
         ));
-        return NewsBloc(mockRepository);
+        return NewsBloc(getArticlesUseCase: mockGetArticlesUseCase);
       },
       act: (bloc) => bloc.add(const FetchInitialNews()),
       expect: () => [
@@ -96,13 +95,8 @@ void main() {
     blocTest<NewsBloc, NewsState>(
       'emits updated search query and triggers initial fetch',
       build: () {
-        when(() => mockRepository.getArticles(
-              limit: any(named: 'limit'),
-              offset: any(named: 'offset'),
-              search: any(named: 'search'),
-              newsSite: any(named: 'newsSite'),
-            )).thenAnswer((_) async => sampleResponse);
-        return NewsBloc(mockRepository);
+        when(() => mockGetArticlesUseCase(any())).thenAnswer((_) async => sampleResponse);
+        return NewsBloc(getArticlesUseCase: mockGetArticlesUseCase);
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('Moon')),
       expect: () => [

@@ -16,7 +16,8 @@ import 'package:injectable/injectable.dart' as _i526;
 
 import '../../data/repositories/news_repository_impl.dart' as _i213;
 import '../../domain/repositories/news_repository.dart' as _i88;
-import '../../presentation/bloc/news_bloc.dart' as _i106;
+import '../../domain/usecases/get_article_by_id_usecase.dart' as _i236;
+import '../../domain/usecases/get_articles_usecase.dart' as _i165;
 import '../network/api_client.dart' as _i557;
 import 'register_module.dart' as _i291;
 
@@ -33,7 +34,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i88.NewsRepository>(
       () => _i213.NewsRepositoryImpl(gh<_i557.ApiClient>()),
     );
-    gh.factory<_i106.NewsBloc>(() => _i106.NewsBloc(gh<_i88.NewsRepository>()));
+    gh.lazySingleton<_i236.GetArticleByIdUseCase>(
+      () => _i236.GetArticleByIdUseCase(gh<_i88.NewsRepository>()),
+    );
+    gh.lazySingleton<_i165.GetArticlesUseCase>(
+      () => _i165.GetArticlesUseCase(gh<_i88.NewsRepository>()),
+    );
     return this;
   }
 }

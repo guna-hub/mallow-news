@@ -1,8 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
+import '../../presentation/bloc/news_bloc.dart';
 import 'injection_container.config.dart';
 
-final sl = GetIt.instance;
+final getIt = GetIt.instance;
 
 @InjectableInit(
   initializerName: 'init', // default
@@ -11,5 +12,8 @@ final sl = GetIt.instance;
 )
 Future<void> init() async {
   // Auto-register annotated dependencies
-  sl.init();
+  getIt.init();
+  if (!getIt.isRegistered<NewsBloc>()) {
+    getIt.registerFactory<NewsBloc>(() => NewsBloc());
+  }
 }
